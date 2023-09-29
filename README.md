@@ -1,0 +1,2 @@
+# Sinteza-App
+Sinteza App
