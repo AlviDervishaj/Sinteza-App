@@ -28,6 +28,10 @@ from GramAddict.core.utils import (
     random_sleep,
     save_crash,
     skip_smart_lock,
+    stop_bot,
+    head_up_notifications,
+    kill_atx_agent,
+    stop_bot,
 )
 
 logger = logging.getLogger(__name__)
@@ -1123,6 +1127,8 @@ class AccountView:
             and not d(resourceId=ResourceID.TAB_BAR).exists()
         )
 
+    # <node index="2" text="Log In" resource-id="com.instagram.android:id/login_button" class="android.widget.Button" package="com.instagram.android" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" visible-to-user="true" bounds="[522,249][648,305]" />
+
     def log_in_by_credentials(self, username, password):
         if password is None:
             logger.error("There is any password set!")
@@ -1194,30 +1200,36 @@ class AccountView:
             logger.info("Options button doesn't exists!")
 
     def refresh_account(self):
-        d = self.device.find
-        profile_view = d(resourceIdMatches=ResourceID.IS_PROFILE_VIEW)
-        if not profile_view.exists():
-            self.navigate_to_main_account()
-        textview = d(
-            resourceIdMatches=ResourceID.ROW_PROFILE_HEADER_TEXTVIEW_POST_CONTAINER
-        )
-        universal_actions = UniversalActions(self.device)
-        if textview.exists(Timeout.SHORT):
-            logger.info("Refresh account...")
-            universal_actions.swipe_points(
-                direction=Direction.UP,
-                start_point_y=textview.get_bounds()["bottom"],
-                delta_y=280,
-            )
-            random_sleep(modulable=False)
-        obj = d(
-            resourceIdMatches=ResourceID.ROW_PROFILE_HEADER_TEXTVIEW_POST_CONTAINER
-        )
-        if not obj.exists(Timeout.MEDIUM):
-            logger.debug(
-                "Can't see Posts, Followers and Following after the refresh, maybe we moved a little bit bottom.. Swipe down."
-            )
-            universal_actions.swipe_points(Direction.UP)
+            try:
+                d = self.device.find
+                profile_view = d(resourceIdMatches=ResourceID.IS_PROFILE_VIEW)
+                if not profile_view.exists():
+                    self.navigate_to_main_account()
+                textview = d(
+                    resourceIdMatches=ResourceID.ROW_PROFILE_HEADER_TEXTVIEW_POST_CONTAINER
+                )
+                universal_actions = UniversalActions(self.device)
+                if textview.exists(Timeout.SHORT):
+                    logger.info("Refresh account...")
+                    universal_actions.swipe_points(
+                        direction=Direction.UP,
+                        start_point_y=textview.get_bounds()["bottom"],
+                        delta_y=280,
+                    )
+                    random_sleep(modulable=False)
+                obj = d(
+                    resourceIdMatches=ResourceID.ROW_PROFILE_HEADER_TEXTVIEW_POST_CONTAINER
+                )
+                if not obj.exists(Timeout.MEDIUM):
+                    logger.debug(
+                        "Can't see Posts, Followers and Following after the refresh, maybe we moved a little bit bottom.. Swipe down."
+                    )
+                    universal_actions.swipe_points(Direction.UP)
+            except:
+                logger.info("ACCOUNT REFRESH ERROR\n")
+                stop_bot(self.device, None, None, False)
+
+
 
 
 class SettingsView:
@@ -2198,6 +2210,25 @@ class UniversalActions:
         self.swipe_points(direction=Direction.UP)
         random_sleep(inf=5, sup=8, modulable=False)
 
+
+    @staticmethod
+    def log_in_after_log_out(self, username) -> bool:
+        if username is None:
+            logger.error("Username is empty !")
+            return False
+        logger.info(f"Logging back in to {username}")
+        d = self.device.find
+        login_button = d(resourceId=ResourceID.LOG_IN_BUTTON_AFTER) 
+        if login_button.exists():
+            login_button.click()
+        else: 
+            logger.error("Could not find log in button.")
+            return False
+        login_button.wait_gone(Timeout.LONG)
+        return True
+
+
+
     @staticmethod
     def detect_block(device) -> bool:
         if not args.disable_block_detection:
@@ -2250,8 +2281,10 @@ class UniversalActions:
                 * 60
             )
             sleep(time_to_sleep)
+            # try to log in
             open_instagram(device)
             account_view.close_logged_out_error()
+            account_view.log_in_from_account_selecting(args.username)
             account_view.navigate_to_main_account()
             account_view.changeToUsername(args.username, args.password)
             raise DeviceFacade.RelogAfterBlock()

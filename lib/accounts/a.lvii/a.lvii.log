@@ -1,5 +1,0 @@
-[08:43 19/09] | pre_load failed due to AppHasCrashed. Attempt 1/3
-[08:43 19/09] | pre_load failed due to AppHasCrashed. Attempt 2/3
-[08:43 19/09] | pre_load failed due to AppHasCrashed. Attempt 3/3
-[08:43 19/09] | Something is keeping closing IG APP. Please check your logcat to understand the reason! `adb logcat`
-[08:43 19/09] | Finished.

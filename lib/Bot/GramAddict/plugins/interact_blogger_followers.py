@@ -1,6 +1,7 @@
 import logging
 from functools import partial
 from random import seed
+import os
 
 from colorama import Style
 
@@ -88,7 +89,10 @@ class InteractBloggerFollowers_Following(Plugin):
 
             # check if source is in blacklist
             # open file
-            with open(f"accounts/{self.session_state.my_username}/blacklist.txt", "r") as file:
+            if os.path.exists(f"accounts/{self.session_state.my_username}/blacklist_users.txt") == False:
+                with open(f"accounts/{self.session_state.my_username}/blacklist_users.txt", "w") as file:
+                    file.write("")
+            with open(f"accounts/{self.session_state.my_username}/blacklist_users.txt", "r") as file:
                 blacklist = file.read().splitlines()
             # check if source is in blacklist
             if source in blacklist:
